@@ -21,7 +21,12 @@ cfg = {
     #   (分P数量及分P标题可能无法正确显示)
     # - both : 两者兼用
     #   (多一个 HTTP 请求)
-    'getDmidFrom' : 'both'
+    'getDmidFrom' : 'both',
+    # 弹幕统计时间跨度
+    # - 小于0: 设置为视频长度的相应除数，例如 -2 代表视频长度的 1/2，-3 代表 1/3
+    # - 等于0: 设置为视频长度的 1/25
+    # - 大于0: 设置为相应秒数，例如 2 代表 2 秒
+    'timespan' : 5
 }
 # 主要代码开始
 
@@ -211,9 +216,15 @@ else:
         import matplotlib.pyplot as plt
         from scipy import interpolate
         timeline = np.arange(0, maxTime, 0.1)
-        plt.plot(timeline, interpolate.splev(timeline, interpolate.splrep(range(maxTime), smoothify(timecount, int(maxTime / 25)))), 'b-',
+        if(cfg['timespan'] == 0):
+            timespan = int(maxTime / 25)
+        elif(cfg['timespan'] < 0):
+            timespan = int(maxTime / (-cfg['timespan']))
+        else:
+            timespan = cfg['timespan']
+        plt.plot(timeline, interpolate.splev(timeline, interpolate.splrep(range(maxTime), smoothify(timecount, timespan))), 'b-',
             range(maxTime), timecount, 'b.')
-        plt.title('%s\nav%i 弹幕池号%i +/-%is' % (videoInfo['title'], videoInfo['id'], videoInfo['dmid'], int(maxTime / 25)))
+        plt.title('%s\nav%i 弹幕池号%i +/-%is' % (videoInfo['title'], videoInfo['id'], videoInfo['dmid'], timespan))
         plt.xlabel('时间轴')
         plt.ylabel('弹幕量')
         plt.axis([0, maxTime, 0, max(timecount)])
